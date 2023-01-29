@@ -103,7 +103,7 @@ jobs:
           keys: [frontend-build]
       - run:
           name: Frontend Analyse
-          command:
+          command: |
             cd frontend
             npm install
             npm audit fix --audit-level=critical --force
@@ -118,7 +118,7 @@ jobs:
           keys: [backend-build]
       - run:
           name: Backend Analyse
-          command:
+          command: |
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
