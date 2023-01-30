@@ -191,19 +191,20 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints:
-            - '15:c5:a4:a1:30:2c:4e:33:df:35:d8:58:af:8c:55:f6:9d:8a:82:dd'
+          fingerprints: ["15:c5:a4:a1:30:2c:4e:33:df:35:d8:58:af:8c:55:f6:9d:8a:82:dd"]
+      - attach_workspace:
+          at: /tmp/.circleci/ansible
       - run:
           name: Install dependencies
           command: |
             apk add --update --no-cache tar gzip ansible aws-cli
-      - attach_workspace:
-          at: ~/
       - run:
           name: Configure server
           command: |
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+#            cd .circleci/ansible
+#            ansible-playbook -i inventory.txt configure-server.yml
+           export ANSIBLE_HOST_KEY_CHECKING=False
+           ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 #
