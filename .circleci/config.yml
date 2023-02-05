@@ -35,7 +35,7 @@ commands:
             npm install
             npm run build
             npm run migrations:revert
-            
+
 jobs:
   build-frontend:
     docker:
@@ -145,7 +145,7 @@ jobs:
       - slack/notify:
           event: fail
           template: basic_fail_1
-#
+  #
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -157,7 +157,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=your-tag \
+              --tags project=udapeople \
               --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
               --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7}
       - run:
@@ -165,7 +165,7 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=your-tag \
+              --tags project=udapeople \
               --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --parameter-overrides ID=${CIRCLE_WORKFLOW_ID:0:7}
       - run:
@@ -181,16 +181,16 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-#
+  #
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.16
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["15:c5:a4:a1:30:2c:4e:33:df:35:d8:58:af:8c:55:f6:9d:8a:82:dd"]
+          fingerprints: ["27:72:73:70:be:b4:f2:1d:86:8a:af:72:13:11:f9:62"]
       - attach_workspace:
-          at: /tmp/.circleci/ansible
+          at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -198,8 +198,8 @@ jobs:
       - run:
           name: Configure server
           command: |
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+            cd .circleci
+            ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -219,12 +219,12 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            npm install
-            OUTPUT=$(npm run migrations)
+            sudo npm install -g npm
+            npm run migrations > migrations_dump.txt
       - run:
           name: Send migration results to kvdb
           command: |
-            if grep -q "successful" $OUTPUT;
+            if grep -q "successfully" ~/project/backend/migrations_dump.txt;
             then
               curl --insecure https://kvdb.io/F3fri59RyA46ap3u82NoTb/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             else
@@ -232,7 +232,7 @@ jobs:
             fi
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-#
+  #
   deploy-frontend:
     docker:
       - image: python:3.7-alpine3.16
@@ -241,22 +241,22 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update --no-cache tar gzip nodejs npm aws-cli
+            apk add --update --no-cache tar gzip nodejs npm aws-cli curl
       - restore_cache:
           keys: [frontend-build]
       - run:
           name: Get backend url
           command: |
-                  BACKEND_IP=$(aws ec2 describe-instances \
-                  --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                  --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                  --output text)
-                  export API_URL="http://${BACKEND_IP}:3030"
-                  echo "API_URL = ${API_URL}"
-                  echo API_URL=${API_URL} >> frontend/.env
-                  echo ENVIRONMENT=production  >> frontend/.env
-                  echo NODE_ENV=production >> frontend/.env
-                  cat frontend/.env
+            BACKEND_IP=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL=${API_URL} >> frontend/.env
+            echo ENVIRONMENT=production  >> frontend/.env
+            echo NODE_ENV=production >> frontend/.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
@@ -269,25 +269,20 @@ jobs:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-#
+  #
   deploy-backend:
     docker:
-      - image: cimg/python:3.10-node
-        user: root
+      - image: python:3.7-alpine3.16
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprint: ["15:c5:a4:a1:30:2c:4e:33:df:35:d8:58:af:8c:55:f6:9d:8a:82:dd"]
+          fingerprint: ["27:72:73:70:be:b4:f2:1d:86:8a:af:72:13:11:f9:62"]
       - attach_workspace:
-          at: /tmp/.circleci/ansible
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            sudo apt update
-            sudo apt install software-properties-common
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible
-            pip install awscli
+            apk add --update --no-cache ansible tar gzip nodejs npm aws-cli curl
       - run:
           name: install node modules
           command: |
@@ -296,9 +291,10 @@ jobs:
       - run:
           name: build backend dist
           command: |
-            cd /root/project/backend
-            npm i
-            echo ENVIROMENT=development > ".env"
+            cd backend
+            npm install
+            touch .env
+            echo ENVIROMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
             echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
             echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
@@ -309,18 +305,13 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
             npm run build
-            npm run prestart:prod
+
       - run:
-          name: build zip file
+          name: Zip Backend Directory
           command: |
             cd /root/project/
-            tar -zcvf api.tar.gz backend/
-            mv api.tar.gz ~/project/.circleci/ansible/roles/deploy/files/
-      - run:
-          name: add ansible config
-          command: |
-            echo "[ssh_connection]" > ansible.cfg
-            echo "scp_if_ssh=True" >> ansible.cfg
+            tar -zcvf backend.tar.gz backend/
+            mv backend.tar.gz ~/project/.circleci/ansible/roles/deploy/files/
       - run:
           name: Deploy backend
           command: |
@@ -333,7 +324,7 @@ jobs:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-#
+  #
   smoke-test:
     docker:
       - image: python:3.7-alpine3.16
@@ -342,7 +333,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update --no-cache aws-cli curl
+            apk add --update --no-cache aws-cli curl tar gzip nodejs npm
       - run:
           name: Backend smoke test
           command: |
@@ -352,7 +343,7 @@ jobs:
             --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            if curl -s http://${BACKEND_IP}:3030/api/status | grep "ok"
+            if curl -s http://${API_URL}/api/status | grep "ok"
             then
               echo "Backend Smoke Test Was Successful"
               exit 0
@@ -363,9 +354,8 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            echo "------------------------------------"
-            echo http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/
-            echo "------------------------------------"
+            echo http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees
+            
             if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/ | grep "Welcome"
             then
               echo "Frontend Smoke Test Success"
@@ -378,7 +368,7 @@ jobs:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-#
+  #
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
@@ -441,9 +431,9 @@ workflows:
           requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-#          filters:
-#            branches:
-#              only: [test-feature-branch]
+          filters:
+            branches:
+              only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
