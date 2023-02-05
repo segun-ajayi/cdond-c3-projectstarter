@@ -361,10 +361,10 @@ jobs:
               echo "Frontend Smoke Test Failed"
               return 1
             fi
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - destroy-environment:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - revert-migrations:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
   #
   cloudfront-update:
     docker:
@@ -378,10 +378,10 @@ jobs:
               --use-previous-template \
               --stack-name InitialStack \
               --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7},UsePreviousValue=false
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - destroy-environment:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - revert-migrations:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   cleanup:
     docker:
@@ -406,10 +406,10 @@ jobs:
               aws cloudformation delete-stack --stack-name front-prod-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name back-prod-${OldWorkflowID}
             fi
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - destroy-environment:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+#      - revert-migrations:
+#          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 #
 
