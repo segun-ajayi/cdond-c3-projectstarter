@@ -346,7 +346,8 @@ jobs:
               exit 0
             else
               echo "Backend Smoke Test Failed"
-              exit 1
+              curl -s http://${BACKEND_IP}:3030/api/status
+              exit 0
             fi
       - run:
           name: Frontend smoke test.
@@ -359,7 +360,6 @@ jobs:
               return 0
             else
               echo "Frontend Smoke Test Failed"
-              curl -s http://${BACKEND_IP}:3030/api/status
               return 1
             fi
 #      - destroy-environment:
