@@ -1,46 +1,44 @@
-#---
-#- name: 'Update/Upgrade Packages'
-#  become: yes
-#  apt:
-#      upgrade: yes
-#      update_cache: yes
-#      cache_valid_time: 86400
-#- name: 'remove unneeded Dependencies'
-#  become: yes
-#  apt:
-#    autoremove: yes
-#- name: Install Dependencies
-#  become: yes
-#  apt:
-#    name: ['nodejs, npm']
-#    state: latest
-#    update_cache: yes
-#- name: Install PM2
-#  become: yes
-#  npm:
-#    name: pm2
-#    global: yes
-#    state: latest
-#    production: yes
-#- name: extract artifact
-#  become: yes
-#  unarchive:
-#    src: files/artifact.tar.gz
-#    dest: .
-#- name: Start APP
-#  become: yes
-#  shell: |
-#    pm2 stop all
-#    pm2 start npm -- start
+---
+- name: "Update repo"
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: "Upgrade packages"
+  become: yes
+  apt:
+    upgrade: yes
+
+- name: "auto-remove dependencies"
+  become: yes
+  apt:
+    autoremove: yes
+
+- name: "Install dependencies"
+  become: yes
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+    update_cache: yes
+
+- name: "Install pm2"
+  become: yes
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
 
 - name: "unarchive backend files"
   unarchive:
     src: /root/project/backend.tar.gz
     dest: /home/ubuntu/
 
-- name: "executing node"
+- name: "Start Backend"
   shell: |
     cd /home/ubuntu/backend/dist
+    npm install --legacy-peer-deps
+    npm run build
     pm2 stop default
     pm2 start npm --name 'udapeople' -- start
     pm2 ls
