@@ -291,7 +291,7 @@ jobs:
             cd /root/project/backend
             npm install --legacy-peer-deps
             touch .env
-            echo ENVIROMENT=production > ".env"
+            echo ENVIRONMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
             echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
             echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
@@ -308,7 +308,7 @@ jobs:
           command: |
             cd /root/project/
             tar -zcvf backend.tar.gz backend/
-            mv backend.tar.gz ~/project/.circleci/ansible/roles/deploy/files/
+#            sudo mv backend.tar.gz ~/project/.circleci/ansible/roles/deploy/files/
       - run:
           name: Deploy backend
           command: |
