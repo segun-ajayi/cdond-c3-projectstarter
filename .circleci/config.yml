@@ -289,7 +289,7 @@ jobs:
           command: |
             pwd
             cd /root/project/backend
-            npm install
+            npm install --legacy-peer-deps
             touch .env
             echo ENVIROMENT=production > ".env"
             echo TYPEORM_CONNECTION=postgres >> ".env"
