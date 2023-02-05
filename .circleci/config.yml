@@ -287,7 +287,8 @@ jobs:
       - run:
           name: build backend dist
           command: |
-            cd backend
+            pwd
+            cd /root/project/backend
             npm install
             touch .env
             echo ENVIROMENT=production > ".env"
