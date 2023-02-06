@@ -29,7 +29,7 @@ describe('Employee Controller', () => {
       // Arrange
       const request: CreateEmployeeRequest = {
         accountNumber: 'test',
-        address: 'San Pedro Sula, Calle 1, Casa 5',
+        aaddress: 'San Pedro Sula, Calle 1, Casa 5',
         bankName: 'Promerica',
         birthdate: '1993-14-04',
         city: 'San Pedro Sula',
